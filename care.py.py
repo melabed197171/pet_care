@@ -3,7 +3,7 @@ from PIL import Image
 st.set_page_config(page_title="منصة أصدقاء الحيوان", page_icon="🐾", layout="centered")
 try:
     image = Image.open('cat.png')
-    st.image(image, width=300)
+    st.image(image, width=100)
 except FileNotFoundError:
     st.warning("cat.png")
 # إعدادات الصفحة الاحترافية
