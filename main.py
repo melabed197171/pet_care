@@ -1,30 +1,45 @@
-import streamlit as st
+importstreamlitas st
+importpandasas pd
 
-# إعداداتالصفحة
-st.set_page_config(page_title="العناية الذكية بالحيوانات الأليفة", page_icon="🐾")
+# إعداد الصفحة
+st.set_page_config(page_title="VetSmart Pro | الرعاية الذكية", page_icon="🐾", layout="wide")
 
-# القائمةالجانبيةللتنقل
-page = st.sidebar.selectbox("انتقل إلى:", ["الرئيسية", "قائمة المنتجات", "تواصل معنا"])
+# --- التنسيق البصري ---
+st.markdown("""
+<style>
+    .main { background-color: #f8f9fa; }
+    .stButton>button { background-color: #2e7d32; color: white; border-radius: 8px; }
+    .price-box { padding: 15px; background-color: #e8f5e9; border-radius: 10px; border: 1px solid #2e7d32; }
+</style>
+    """, unsafe_allow_html=True)
 
-if page == (" الرئيسية", "العناية الذكية"):
-    st.subheader("نقدم أفضل المستلزمات الطبية والغذائية للحيوانات الأليفة في الإسكندرية")
-    st.write("هدفنا هو توفير متطلبات أصحاب العيادات والمربين بأفضل جودة وأسرع خدمة توصيل.")
-    st.image("https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60", caption="خدمتكمهيغايتنا")
+# --- القائمة الجانبية (فريق العمل) ---
+with st.sidebar:
+    st.header("🩺 فريق VetSmart")
+    st.info("نخبة من الأطباء البيطريين ومهندسي سلامة الغذاء لخدمة أليفك.")
+    st.divider()
+    st.write("📍 الرياض، المملكة العربية السعودية")
 
-elif page == "قائمة المنتجات":
-    st.title("📦كتالوج المنتجات")
-    st.write("استكشف مجموعتنا المختارة من المستلزمات:")
+# --- العنوان الرئيسي ---
+st.title("🐾 منصة VetSmart Pro للرعاية المتكاملة")
+st.subheader("إشراف طبي وهندسي عالمي المستوى")
 
+# --- أقسام الخدمات ---
+tabs = st.tabs(["🏥 الخدمات والعيادة", "🍱 التغذية الذكية", "🛍️ المتجر والمستلزمات", "💳 إتمام الطلب"])
+
+# القسم 1: الخدمات الطبية والإرشادات
+with tabs[0]:
 col1, col2 = st.columns(2)
-
 with col1:
- st.info("💊 **مستلزماتطبية**")
- st.write("- حقنطبيةمقاساتمختلفة")
- st.write("- مطهراتوشاشمعقم")
- st.write("- فيتاميناتومكملاتغذائية")
-
+        st.markdown("### 🩺 استشارات وتطعيمات")
+        st.write("- استشارات طبية فورية.\n- جدول تطعيمات ذكي.\n- متابعة دورية للأدوية.")
 with col2:
- st.success("🥣 **أغذيةواكسسوارات**")
- st.write("- درايفود (Dry Food) متميز")
- st.write("- أطواقوسلاسلمتينة")
- st.write("- أدواتالعنايةبالشعر (فرش)")
+        st.markdown("### 📚 إرشادات بيطرية")
+        st.success("نصيحة الطبيب: تأكد من جدول التطعيمات الرباعي لقطتك في موعده.")
+
+# القسم 2: التغذية الذكية (إشراف مهندس سلامة الغذاء)
+with tabs[1]:
+    st.header("⚖️ حاسبة التغذية ومعايير السلامة")
+c1, c2 = st.columns(2)
+with c1:
+weight = st.number_input("وزن الأليف (كجم):", min_value=0.5, value=5.0)
