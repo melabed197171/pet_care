@@ -31,8 +31,8 @@ with col2:
  st.write("- أدواتالعنايةبالشعر (فرش)")
 
 elif page == "تواصلمعنا":
-   st.title("📞اطلبالآن")
-   st.write("نحنمتواجدونلخدمتكمفيمنطقةمحرمبكوكرموز.")
+     st.title("📞اطلبالآن")
+     st.write("نحنمتواجدونلخدمتكمفيمنطقةمحرمبكوكرموز.")
 
 with st.form("contact_form"):
  name = st.text_input("الاسم:")
