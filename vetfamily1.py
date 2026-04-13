@@ -178,8 +178,9 @@ st.markdown("""
 # =============================================
 # الثوابت
 # =============================================
+# =============================================
 WHATSAPP_NUMBER = "201022395878"
-FACEBOOK_URL    = "https://www.facebook.com/share/p/1Dgba12hfT/"
+FACEBOOK_URL    = "https://www.facebook.com/share/17LZbHtWzW/"
 INSTAPAY_NUMBER = "01022395878"
 VODAFONE_NUMBER = "01022395878"
 INSTAPAY_NAME   = "VetFamily Alexandria"
