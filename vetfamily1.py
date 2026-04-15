@@ -4,16 +4,16 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import datetime
 import pytz
 
-# إعداد الصفحة
+# 1. إعدادات الصفحة الأساسية
 st.set_page_config(page_title="VetFamily Alexandria", page_icon="🐾", layout="wide")
 
-# رابط الجدول (تأكد من ضبط الوصول إلى 'محرر')
+# 2. رابط جدول البيانات (تأكد من ضبط الصلاحية لـ Editor)
 URL = "https://docs.google.com/spreadsheets/d/1kQ1junWnmyfwKPYj-Jm2QeCLlJ4dwmiMXkystV8dc7k/edit?usp=sharing"
 
-# الاتصال بجوجل شيت
+# 3. الربط بجوجل شيت
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-def save_order(name, phone, product):
+def save_data(name, phone, product):
     try:
         existing_data = conn.read(spreadsheet=URL)
         new_row = pd.DataFrame([{
@@ -26,85 +26,44 @@ def save_order(name, phone, product):
         conn.update(spreadsheet=URL, data=updated_df)
         return True
     except Exception as e:
-        st.error(f"خطأ في الحفظ: {e}")
+        st.error(f"خطأ تقني: {e}")
         return False
 
-# التنسيق
+# 4. تصميم الواجهة (تم تنظيفه من الرموز المسببة للأخطاء)
 st.markdown("""
 <style>
-    .header { background-color: #1e3c72; padding: 20px; color: white; text-align: center; border-radius: 10px; }
-    .product-card { background-color: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #dee2e6; text-align: center; margin-bottom: 15px; }
+    .main-header { background: #1e3c72; padding: 25px; color: white; text-align: center; border-radius: 15px; }
+    .product-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; margin-top: 15px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="header"><h1>🐾 VetFamily Alexandria</h1></div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header"><h1>🐾 VetFamily Alexandria</h1><p>الرعاية المتكاملة لحيوانك الأليف</p></div>', unsafe_allow_html=True)
 
-# عرض المنتجات
-st.write("### 🛒 المنتجات المتاحة")
+# 5. عرض المنتجات وتسجيل الطلبات
+st.write("### 🛒 العروض المتاحة")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown('<div class="product-card"><h3>رويال كانين قطط 2 كجم</h3><p>450 ج.م</p></div>', unsafe_allow_html=True)
-    with st.expander("📝 اطلب الآن"):
-        name1 = st.text_input("الاسم", key="n1")
-        phone1 = st.text_input("الموبايل", key="p1")
-        if st.button("تأكيد الطلب", key="b1"):
-            if name1 and phone1:
-                if save_order(name1, phone1, "رويال كانين قطط"):
-                    st.success("✅ تم تسجيل طلبك!")
-            else:
-                st.warning("يرجى إكمال البيانات")
+    st.markdown('<div class="product-card"><h3>رويال كانين قطط 2 كجم</h3><p style="color:green; font-weight:bold;">450 ج.م</p></div>', unsafe_allow_html=True)
+    with st.expander("📝 سجل طلبك هنا"):
+        n1 = st.text_input("الاسم بالكامل", key="user1")
+        p1 = st.text_input("رقم الموبايل", key="phone1")
+        if st.button("تأكيد الطلب والحفظ", key="btn1"):
+            if n1 and p1:
+                if save_data(n1, p1, "رويال كانين قطط"):
+                    st.success("✅ تم الحفظ في ملف الإكسيل بنجاح!")
+            else: st.warning("يرجى إدخال البيانات")
 
 with col2:
-    st.markdown('<div class="product-card"><h3>رمل قطط كربون 5 لتر</h3><p>180 ج.م</p></div>', unsafe_allow_html=True)
-    with st.expander("📝 اطلب الآن"):
-        name2 = st.text_input("الاسم", key="n2")
-        phone2 = st.text_input("الموبايل", key="p2")
-        if st.button("تأكيد الطلب", key="b2"):
-            if name2 and phone2:
-                if save_order(name2, phone2, "رمل كربون"):
-                    st.success("✅ تم تسجيل طلبك!")
-    <div class="product-card">
-        <div class="product-image">{product['icon']}</div>
-        <div class="product-name">{product['name']}</div>
-        <div>{get_badge_html(product.get('badges', []))}</div>
-        <div class="product-description">{product['desc']}</div>
-        <div class="product-price">{product['price']} ج.م</div>
-        <div style="font-size:0.8rem;color:#718096;margin-top:5px;">
-            📦 {product['unit']} | 🏷️ {product['brand']} | 🌍 {product['country']}
-        </div>
-        <div class="stock-badge {sc}" style="margin-top:10px;">{st_txt}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    with st.expander("📋 التفاصيل والمميزات"):
-        for f in product["features"]:
-            st.write(f"✓ {f}")
-
-    # ===== زر الواتساب مباشرة =====
-    if product["stock"] > 0:
-        st.link_button(
-            f"📱 اطلب عبر الواتساب - {product['price']} ج.م",
-            product_wa_msg(product),
-            use_container_width=True
-        )
-    else:
-        st.button("❌ نفذ من المخزون", disabled=True, use_container_width=True)
-
-    # عرض التكلفة والربح للمدير فقط
-    if st.session_state.is_logged_in:
-        profit = product["price"] - product["cost"]
-        c1, c2 = st.columns(2)
-        with c1: st.caption(f"💰 التكلفة: {product['cost']} ج")
-        with c2: st.caption(f"📈 الربح: {profit} ج (+{profit/product['cost']*100:.0f}%)")
-
-
-def render_item(name, price, desc, is_medical=False):
-    ac  = "#d9534f" if is_medical else "#28a745"
-    msg = urllib.parse.quote(f"مرحباً VetFamily 🐾\nأود طلب: {name}\nالسعر: {price}\nبرجاء التواصل لتأكيد الطلب 🙏")
-    st.markdown(f"""
-    <div class="item-box" style="border-right:8px solid {ac};">
-        <div class="item-title">{name}</div>
+    st.markdown('<div class="product-card"><h3>رمل قطط كربون 5 لتر</h3><p style="color:green; font-weight:bold;">180 ج.م</p></div>', unsafe_allow_html=True)
+    with st.expander("📝 سجل طلبك هنا"):
+        n2 = st.text_input("الاسم بالكامل", key="user2")
+        p2 = st.text_input("رقم الموبايل", key="phone2")
+        if st.button("تأكيد الطلب والحفظ", key="btn2"):
+            if n2 and p2:
+                if save_data(n2, p2, "رمل قطط كربون"):
+                    st.success("✅ تم تسجيل بياناتك!")
+            else: st.warning("يرجى إدخال البيانات")
         <div class="item-desc">{desc}</div>
         <div class="item-price" style="color:{ac};">السعر: {price}</div>
     </div>""", unsafe_allow_html=True)
