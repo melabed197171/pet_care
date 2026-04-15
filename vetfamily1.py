@@ -4,16 +4,16 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import datetime
 import pytz
 
-# 1. إعدادات الصفحة الأساسية
-st.set_page_config(page_title="VetFamily Alexandria", page_icon="🐾", layout="wide")
+# 1. اعدادات الصفحة
+st.set_page_config(page_title="VetFamily Alexandria", layout="wide")
 
-# 2. رابط جدول البيانات (تأكد من ضبط الصلاحية لـ Editor)
+# 2. رابط جدول البيانات (تأكد من ضبط الصلاحية لـ Editor في جوجل شيت)
 URL = "https://docs.google.com/spreadsheets/d/1kQ1junWnmyfwKPYj-Jm2QeCLlJ4dwmiMXkystV8dc7k/edit?usp=sharing"
 
-# 3. الربط بجوجل شيت
+# 3. الاتصال بجوجل شيت
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-def save_data(name, phone, product):
+def save_to_sheets(name, phone, product):
     try:
         existing_data = conn.read(spreadsheet=URL)
         new_row = pd.DataFrame([{
@@ -26,85 +26,43 @@ def save_data(name, phone, product):
         conn.update(spreadsheet=URL, data=updated_df)
         return True
     except Exception as e:
-        st.error(f"خطأ تقني: {e}")
+        st.error(f"خطأ في الاتصال: {e}")
         return False
 
-# 4. تصميم الواجهة (تم تنظيفه من الرموز المسببة للأخطاء)
-st.markdown("""
-<style>
-    .main-header { background: #1e3c72; padding: 25px; color: white; text-align: center; border-radius: 15px; }
-    .product-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; margin-top: 15px;}
-</style>
-""", unsafe_allow_html=True)
+# 4. الواجهة البرمجية النصية
+st.title("VetFamily Alexandria")
+st.write("مركز الرعاية المتكاملة للحيوانات الاليفة")
 
-st.markdown('<div class="main-header"><h1>🐾 VetFamily Alexandria</h1><p>الرعاية المتكاملة لحيوانك الأليف</p></div>', unsafe_allow_html=True)
+st.write("---")
+st.subheader("العروض والمنتجات")
 
-# 5. عرض المنتجات وتسجيل الطلبات
-st.write("### 🛒 العروض المتاحة")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown('<div class="product-card"><h3>رويال كانين قطط 2 كجم</h3><p style="color:green; font-weight:bold;">450 ج.م</p></div>', unsafe_allow_html=True)
-    with st.expander("📝 سجل طلبك هنا"):
-        n1 = st.text_input("الاسم بالكامل", key="user1")
-        p1 = st.text_input("رقم الموبايل", key="phone1")
-        if st.button("تأكيد الطلب والحفظ", key="btn1"):
+    st.info("رويال كانين قطط 2 كجم - 450 جنيه")
+    with st.expander("فتح نموذج الطلب"):
+        n1 = st.text_input("الاسم بالكامل", key="name1")
+        p1 = st.text_input("رقم الهاتف", key="phone1")
+        if st.button("تاكيد الطلب", key="btn1"):
             if n1 and p1:
-                if save_data(n1, p1, "رويال كانين قطط"):
-                    st.success("✅ تم الحفظ في ملف الإكسيل بنجاح!")
-            else: st.warning("يرجى إدخال البيانات")
+                if save_to_sheets(n1, p1, "رويال كانين قطط"):
+                    st.success("تم تسجيل طلبك بنجاح في الجدول")
+            else:
+                st.warning("يرجى ادخال البيانات كاملة")
 
 with col2:
-    st.markdown('<div class="product-card"><h3>رمل قطط كربون 5 لتر</h3><p style="color:green; font-weight:bold;">180 ج.م</p></div>', unsafe_allow_html=True)
-    with st.expander("📝 سجل طلبك هنا"):
-        n2 = st.text_input("الاسم بالكامل", key="user2")
-        p2 = st.text_input("رقم الموبايل", key="phone2")
-        if st.button("تأكيد الطلب والحفظ", key="btn2"):
+    st.info("رمل قطط كربون 5 لتر - 180 جنيه")
+    with st.expander("فتح نموذج الطلب"):
+        n2 = st.text_input("الاسم بالكامل", key="name2")
+        p2 = st.text_input("رقم الهاتف", key="phone2")
+        if st.button("تاكيد الطلب", key="btn2"):
             if n2 and p2:
-                if save_data(n2, p2, "رمل قطط كربون"):
-                    st.success("✅ تم تسجيل بياناتك!")
-            else: st.warning("يرجى إدخال البيانات")
-        <div class="item-desc">{desc}</div>
-        <div class="item-price" style="color:{ac};">السعر: {price}</div>
-    </div>""", unsafe_allow_html=True)
-    st.link_button(
-        f"📱 اطلب عبر الواتساب",
-        f"https://wa.me/{WHATSAPP_NUMBER}?text={msg}",
-        use_container_width=True
-    )
-
-# =============================================
-# الهيدر الرئيسي
-# =============================================
-st.markdown("""
-<div class="main-header">
-    <h1>🐾 VetFamily Alexandria 🐾</h1>
-    <p>مركز الرعاية البيطرية المتكاملة - الإسكندرية</p>
-    <p style="font-size:0.95rem;">
-        🩺 أطباء متخصصون &nbsp;|&nbsp;
-        🍖 منتجات أصلية &nbsp;|&nbsp;
-        📱 اطلب عبر الواتساب مباشرة
-    </p>
-</div>
-""", unsafe_allow_html=True)
-
-# ===== شريط الأزرار =====
-t1, t2, t3 = st.columns(3)
-
-with t1:
-    if st.button("❤️ أعجبني", use_container_width=True):
-        st.balloons()
-        st.success("شكراً لدعمك! 🙏")
-
-with t2:
-    if st.button("🏠 تبني الآن", use_container_width=True):
-        st.session_state.show_adoption_form = not st.session_state.show_adoption_form
-        st.rerun()
-
-with t3:
-    if st.button("🔐 المدير", use_container_width=True):
-        st.session_state.show_login = not st.session_state.show_login
-        st.rerun()
+                if save_to_sheets(n2, p2, "رمل كربون"):
+                    st.success("تم الحفظ بنجاح")
+                else:
+                    st.error("فشل الحفظ، تحقق من صلاحيات الجدول")
+            else:
+                st.warning("يرجى ادخال البيانات")
 
 # ===== دخول المدير =====
 if st.session_state.show_login and not st.session_state.is_logged_in:
