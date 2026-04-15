@@ -4,107 +4,70 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import datetime
 import pytz
 
-# إعدادات الربط - تأكد أن الرابط ينتهي بـ /edit?usp=sharing
+# إعداد الصفحة وتصحيح الخطأ البرمجي في التنسيق
+st.set_page_config(page_title="VetFamily Alexandria", layout="wide")
+
+# رابط الجدول (تأكد أن صلاحية الرابط هي "محرر" Editor من جوجل شيت)
 URL = "https://docs.google.com/spreadsheets/d/1kQ1junWnmyfwKPYj-Jm2QeCLlJ4dwmiMXkystV8dc7k/edit?usp=sharing"
 
+# الاتصال بجوجل شيت
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-def save_data(name, product, phone):
+def save_to_sheets(name, phone, product):
     try:
+        # قراءة البيانات الحالية
         existing_data = conn.read(spreadsheet=URL)
-        new_row = pd.DataFrame([{
+        # إنشاء السطر الجديد
+        new_data = pd.DataFrame([{
             "التاريخ": datetime.now(pytz.timezone('Africa/Cairo')).strftime("%Y-%m-%d %H:%M"),
             "اسم العميل": name,
             "المنتج": product,
             "رقم الهاتف": phone
         }])
-        updated_df = pd.concat([existing_data, new_row], ignore_index=True)
+        # الدمج والتحديث
+        updated_df = pd.concat([existing_data, new_data], ignore_index=True)
         conn.update(spreadsheet=URL, data=updated_df)
         return True
-    except:
+    except Exception as e:
+        st.error(f"حدث خطأ في الحفظ: {e}")
         return False
 
-# تصميم الواجهة (تم تصحيح الخطأ المسبب لـ SyntaxError)
+# تصميم الواجهة - تم إصلاح كود الـ CSS هنا
 st.markdown("""
 <style>
-    .main-header { background: linear-gradient(135deg, #1e3c72, #2a5298); padding: 20px; color: white; text-align: center; border-radius: 15px; }
-    .product-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="main-header"><h1>🐾 VetFamily Alexandria</h1></div>', unsafe_allow_html=True)
-
-# مثال لمنتج (كرره لبقية منتجاتك)
-with st.container():
-    st.markdown('<div class="product-card"><h3>🐱 رويال كانين - قطط بالغة</h3><h2>450 ج.م</h2></div>', unsafe_allow_html=True)
-    with st.expander("📝 سجل طلبك الآن"):
-        c_name = st.text_input("الاسم")
-        c_phone = st.text_input("الموبايل")
-        if st.button("تأكيد وحفظ الطلب"):
-            if c_name and c_phone:
-                if save_data(c_name, "رويال كانين قطط", c_phone):
-                    st.success("تم الحفظ في الجدول!")
-                    st.markdown(f'<a href="https://wa.me/201022395878" style="background:#25d366;color:white;padding:10px;text-decoration:none;border-radius:5px;">تواصل واتساب</a>', unsafe_allow_html=True)
-        background: linear-gradient(135deg,#38ef7d,#11998e);
-        padding: 20px; border-radius: 15px; text-align: center;
-        color: white; font-size: 1.1rem; font-weight: 700; margin: 15px 0;
+    .header-box {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        padding: 30px; border-radius: 15px; color: white; text-align: center;
     }
-
-    /* ===== لوحة التحكم ===== */
-    .order-card {
-        background: white; border-radius: 15px; padding: 20px;
-        margin: 10px 0; border-right: 6px solid #667eea;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    }
-
-    @media (max-width: 768px) {
-        .block-container { padding: 0.5rem !important; }
-        .product-name    { font-size: 1.2rem !important; }
+    .card {
+        background: white; padding: 20px; border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# =============================================
-# الثوابت
-# =============================================
-WHATSAPP_NUMBER = "201022395878"
-FACEBOOK_URL    = "https://www.facebook.com/share/p/1Dgba12hfT/"
-INSTAPAY_NUMBER = "01022395878"
-VODAFONE_NUMBER = "01022395878"
-INSTAPAY_NAME   = "VetFamily Alexandria"
+st.markdown('<div class="header-box"><h1>🐾 VetFamily Alexandria</h1><p>مركز الرعاية المتكاملة</p></div>', unsafe_allow_html=True)
 
-CAIRO_TZ = pytz.timezone('Africa/Cairo')
-def get_now(): return datetime.now(CAIRO_TZ)
+# عرض المنتجات (مثال)
+st.write("## 🛒 متجرنا")
+col1, col2 = st.columns(2)
 
-def hash_password(p): return hashlib.sha256(p.encode()).hexdigest()
-ADMIN_USER = "melabed"
-ADMIN_PASS = hash_password("Ma3902242$")
-def check_login(u, p): return u == ADMIN_USER and hash_password(p) == ADMIN_PASS
+with col1:
+    st.markdown('<div class="card"><h3>رويال كانين - قطط</h3><h2>450 ج.م</h2></div>', unsafe_allow_html=True)
+    with st.expander("📝 اطلب الآن"):
+        name = st.text_input("الاسم", key="name1")
+        phone = st.text_input("رقم الموبايل", key="phone1")
+        if st.button("تأكيد الحفظ", key="btn1"):
+            if name and phone:
+                if save_to_sheets(name, phone, "رويال كانين قطط"):
+                    st.success("✅ تم حفظ الطلب في جدول جوجل!")
+                    st.balloons()
+            else:
+                st.warning("يرجى ملء البيانات")
 
-# =============================================
-# Session State
-# =============================================
-defaults = {
-    "show_login":         False,
-    "is_logged_in":       False,
-    "show_adoption_form": False,
-}
-for k, v in defaults.items():
-    if k not in st.session_state:
-        st.session_state[k] = v
-
-# =============================================
-# بناء رسالة الواتساب
-# =============================================
-def wa_link(message):
-    """إنشاء رابط واتساب من رسالة"""
-    return f"https://wa.me/{WHATSAPP_NUMBER}?text={urllib.parse.quote(message)}"
-
-def product_wa_msg(product):
-    return wa_link(
-        f"مرحباً VetFamily 🐾\n"
-        f"أود طلب المنتج التالي:\n\n"
-        f"🛒 المنتج: {product['name']}\n"
+# الفوتر
+st.markdown("---")
+st.caption("VetFamily Alexandria - 2026")
         f"💰 السعر: {product['price']} ج.م\n"
         f"📦 الوحدة: {product['unit']}\n\n"
         f"برجاء التواصل لتأكيد الطلب والتوصيل 🙏"
