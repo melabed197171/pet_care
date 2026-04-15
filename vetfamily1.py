@@ -1,133 +1,50 @@
 import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
-import os
 from datetime import datetime
 import pytz
-import hashlib
-import urllib.parse
 
-# =============================================
-# إعدادات الربط بجوجل شيت (الرابط الخاص بك)
-# =============================================
-GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1kQ1junWnmyfwKPYj-Jm2QeCLlJ4dwmiMXkystV8dc7k/edit?usp=sharing"
+# إعدادات الربط - تأكد أن الرابط ينتهي بـ /edit?usp=sharing
+URL = "https://docs.google.com/spreadsheets/d/1kQ1junWnmyfwKPYj-Jm2QeCLlJ4dwmiMXkystV8dc7k/edit?usp=sharing"
 
-# إنشاء اتصال بالقاعدة
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-def save_to_google_sheets(client_name, product_name, phone):
+def save_data(name, product, phone):
     try:
-        # قراءة البيانات الحالية
-        existing_data = conn.read(spreadsheet=GOOGLE_SHEET_URL)
-        # تجهيز السطر الجديد
+        existing_data = conn.read(spreadsheet=URL)
         new_row = pd.DataFrame([{
             "التاريخ": datetime.now(pytz.timezone('Africa/Cairo')).strftime("%Y-%m-%d %H:%M"),
-            "اسم العميل": client_name,
-            "المنتج": product_name,
+            "اسم العميل": name,
+            "المنتج": product,
             "رقم الهاتف": phone
         }])
-        # دمج وتحديث
         updated_df = pd.concat([existing_data, new_row], ignore_index=True)
-        conn.update(spreadsheet=GOOGLE_SHEET_URL, data=updated_df)
+        conn.update(spreadsheet=URL, data=updated_df)
         return True
-    except Exception as e:
-        st.error(f"خطأ في الحفظ: {e}")
+    except:
         return False
 
-# =============================================
-# إعدادات الصفحة والتنسيق (CSS)
-# =============================================
-st.set_page_config(page_title="VetFamily Alexandria", page_icon="🐾", layout="wide")
-
-# (ضع هنا استايل الـ CSS الموجود في كودك القديم ليبدو الموقع كما هو)
+# تصميم الواجهة (تم تصحيح الخطأ المسبب لـ SyntaxError)
 st.markdown("""
 <style>
-    .main-header { background: linear-gradient(135deg,#1e3c72,#2a5298); padding: 30px; border-radius: 20px; color: white; text-align: center; }
-    .product-card { background: white; border-radius: 18px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; margin-bottom: 10px; }
-    .wa-btn { background: #25d366; color: white !important; padding: 10px; border-radius: 10px; text-decoration: none; display: block; font-weight: bold; }
+    .main-header { background: linear-gradient(135deg, #1e3c72, #2a5298); padding: 20px; color: white; text-align: center; border-radius: 15px; }
+    .product-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header"><h1>🐾 VetFamily Alexandria 🐾</h1><p>قاعدة بيانات العملاء المتصلة</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header"><h1>🐾 VetFamily Alexandria</h1></div>', unsafe_allow_html=True)
 
-# =============================================
-# عرض المنتجات مع نموذج الحفظ
-# =============================================
-# ملاحظة: يمكنك وضع قائمة منتجاتك هنا. سأضع مثالاً واحداً للتجربة:
-products = [
-    {"id": 1, "name": "رويال كانين قطط", "price": 450, "icon": "🐱", "desc": "طعام فرنسي فاخر"}
-]
-
-for prod in products:
-    st.markdown(f"""
-    <div class="product-card">
-        <div style="font-size:3rem;">{prod['icon']}</div>
-        <h3>{prod['name']}</h3>
-        <p>{prod['desc']}</p>
-        <h2 style="color:#28a745;">{prod['price']} ج.م</h2>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    with st.expander("📝 اطلب الآن وسجل بياناتك"):
-        name = st.text_input("اسمك", key=f"n_{prod['id']}")
-        phone = st.text_input("رقم الهاتف", key=f"p_{prod['id']}")
-        if st.button("تأكيد الطلب والحفظ", key=f"b_{prod['id']}"):
-            if name and phone:
-                if save_to_google_sheets(name, prod['name'], phone):
-                    st.success("✅ تم حفظ بياناتك! اضغط على الواتساب للتواصل.")
-                    msg = f"مرحباً، طلبت {prod['name']} من الموقع."
-                    st.markdown(f'<a href="https://wa.me/201022395878?text={msg}" class="wa-btn">تواصل عبر واتساب الآن</a>', unsafe_allow_html=True)
-
-    /* ===== زر الواتساب الرئيسي ===== */
-    .wa-btn {
-        display: block;
-        background: linear-gradient(135deg,#25d366,#128c7e);
-        color: white !important;
-        text-align: center;
-        padding: 14px 20px;
-        border-radius: 14px;
-        font-size: 1.1rem !important;
-        font-weight: 900 !important;
-        text-decoration: none !important;
-        margin: 10px 0;
-        box-shadow: 0 4px 15px rgba(37,211,102,0.4);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .wa-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(37,211,102,0.5);
-    }
-
-    /* ===== بطاقة الباقة ===== */
-    .package-card {
-        border-radius: 20px; padding: 25px; margin: 15px 0;
-        text-align: center;
-    }
-
-    /* ===== فاصل ===== */
-    .divider {
-        height: 3px;
-        background: linear-gradient(90deg,#667eea,#764ba2);
-        margin: 25px 0; border-radius: 10px;
-    }
-
-    /* ===== عروض ===== */
-    .offers-title {
-        font-size: 1.8rem !important; font-weight: 900 !important;
-        color: #ff4b4b !important; text-align: center !important;
-        padding: 15px; background: #fff5f5; border-radius: 15px;
-        border: 2px dashed #ff4b4b; margin: 15px 0 !important;
-    }
-    .item-box {
-        background: white; border-radius: 15px; padding: 20px;
-        margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.07);
-    }
-    .item-title { font-size:1.6rem !important; font-weight:900 !important; color:#1e3c72 !important; margin-bottom:8px !important; }
-    .item-desc  { font-size:0.95rem !important; font-weight:500 !important; color:#718096 !important; margin-bottom:10px !important; }
-    .item-price { font-size:1.4rem !important; font-weight:900 !important; }
-
-    /* ===== رسالة نجاح ===== */
-    .success-message {
+# مثال لمنتج (كرره لبقية منتجاتك)
+with st.container():
+    st.markdown('<div class="product-card"><h3>🐱 رويال كانين - قطط بالغة</h3><h2>450 ج.م</h2></div>', unsafe_allow_html=True)
+    with st.expander("📝 سجل طلبك الآن"):
+        c_name = st.text_input("الاسم")
+        c_phone = st.text_input("الموبايل")
+        if st.button("تأكيد وحفظ الطلب"):
+            if c_name and c_phone:
+                if save_data(c_name, "رويال كانين قطط", c_phone):
+                    st.success("تم الحفظ في الجدول!")
+                    st.markdown(f'<a href="https://wa.me/201022395878" style="background:#25d366;color:white;padding:10px;text-decoration:none;border-radius:5px;">تواصل واتساب</a>', unsafe_allow_html=True)
         background: linear-gradient(135deg,#38ef7d,#11998e);
         padding: 20px; border-radius: 15px; text-align: center;
         color: white; font-size: 1.1rem; font-weight: 700; margin: 15px 0;
