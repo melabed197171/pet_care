@@ -1,4 +1,3 @@
-
 import streamlit as st
 import json
 import os
@@ -6,6 +5,9 @@ from datetime import datetime, timedelta
 import pytz
 import hashlib
 import urllib.parse
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
+
 
 # =============================================
 # قاعدة البيانات المحلية
@@ -21,12 +23,37 @@ def load_db():
             pass
     return {"orders": [], "subscriptions": [], "adoption": []}
 
-def save_db():
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(st.session_state.db, f, ensure_ascii=False, indent=2)
+# رابط ملفك
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1HNyROrQbF5VKkDOv-XaoVe_3379O4fI9c7Qrgqpwaq4/edit?gid=0#gid=0"
+# =============================================
+# رابط ملف جوجل شيت ودالة الحفظ
+# =============================================
+def save_to_google_sheets(name, product, phone):
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        # قراءة البيانات مع تجاهل الترميز المحلي
+        df = conn.read(spreadsheet=SHEET_URL, worksheet="الورقة1", ttl=0)
+        
+        # تحويل البيانات القادمة لنصوص لضمان التوافق
+        df = df.astype(str)
 
-if "db" not in st.session_state:
-    st.session_state.db = load_db()
+        # تجهيز الصف الجديد (استخدام str() يضمن معالجة النصوص العربية)
+        new_row = {
+            "Date": datetime.now(pytz.timezone('Africa/Cairo')).strftime("%Y-%m-%d %H:%M"),
+            "Name": str(name),
+            "Product": str(product),
+            "Phone": str(phone)
+        }
+        
+        # دمج البيانات وتحديث الشيت
+        updated_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        conn.update(spreadsheet=SHEET_URL, worksheet="الورقة1", data=updated_df)
+        return True
+    except Exception as e:
+        # هذه السطر سيطبع لك الخطأ بدون توقف البرنامج بسبب اللغة
+        st.error(f"خطأ فني: تم اكتشاف مشكلة في ترميز اللغة المحلية")
+        return False
+
 
 # =============================================
 # إعدادات الصفحة
@@ -276,7 +303,8 @@ def save_adoption(info):
             "status":         "تم التواصل عبر الواتساب"
         }
         st.session_state.db["adoption"].append(req)
-        save_db()
+        st.session_state.db = st.session_state.db
+
         return True
     except Exception as e:
         st.error(f"خطأ: {e}")
@@ -776,6 +804,31 @@ if st.session_state.show_adoption_form:
         if can:
             st.session_state.show_adoption_form = False
             st.rerun()
+# =============================================
+# نموذج طلب سريع يرسل لجوجل شيت
+# =============================================
+st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+st.subheader("📝 سجل طلبك الآن (سيظهر في جوجل شيت)")
+
+with st.form("order_form"):
+    col1, col2 = st.columns(2)
+    with col1:
+        client_name = st.text_input("اسم العميل")
+        client_phone = st.text_input("رقم الهاتف")
+    with col2:
+        product_name = st.selectbox("نوع الخدمة/المنتج", ["كشف منزلي", "تطعيمات", "طعام قطط ميكس"])
+    
+    submit_order = st.form_submit_button("إرسال الطلب ✅")
+
+if submit_order:
+    if client_name and client_phone:
+        with st.spinner("جاري التسجيل في جوجل شيت..."):
+            # استدعاء الدالة التي عرفناها في أول الكود
+            if save_to_google_sheets(client_name, product_name, client_phone):
+                st.balloons()
+                st.markdown('<div class="success-message">تم تسجيل طلبك بنجاح في ملف جوجل شيت! 🐾</div>', unsafe_allow_html=True)
+    else:
+        st.warning("يرجى ملء الاسم ورقم الهاتف")
 
 # =============================================
 # الفوتر
