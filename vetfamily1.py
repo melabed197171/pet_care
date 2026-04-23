@@ -5,9 +5,6 @@ from datetime import datetime, timedelta
 import pytz
 import hashlib
 import urllib.parse
-from streamlit_gsheets import GSheetsConnection
-import pandas as pd
-
 
 # =============================================
 # قاعدة البيانات المحلية
@@ -23,37 +20,12 @@ def load_db():
             pass
     return {"orders": [], "subscriptions": [], "adoption": []}
 
-# رابط ملفك
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1HNyROrQbF5VKkDOv-XaoVe_3379O4fI9c7Qrgqpwaq4/edit?gid=0#gid=0"
-# =============================================
-# رابط ملف جوجل شيت ودالة الحفظ
-# =============================================
-def save_to_google_sheets(name, product, phone):
-    try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        # قراءة البيانات مع تجاهل الترميز المحلي
-        df = conn.read(spreadsheet=SHEET_URL, worksheet="الورقة1", ttl=0)
-        
-        # تحويل البيانات القادمة لنصوص لضمان التوافق
-        df = df.astype(str)
+def save_db():
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(st.session_state.db, f, ensure_ascii=False, indent=2)
 
-        # تجهيز الصف الجديد (استخدام str() يضمن معالجة النصوص العربية)
-        new_row = {
-            "Date": datetime.now(pytz.timezone('Africa/Cairo')).strftime("%Y-%m-%d %H:%M"),
-            "Name": str(name),
-            "Product": str(product),
-            "Phone": str(phone)
-        }
-        
-        # دمج البيانات وتحديث الشيت
-        updated_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        conn.update(spreadsheet=SHEET_URL, worksheet="الورقة1", data=updated_df)
-        return True
-    except Exception as e:
-        # هذه السطر سيطبع لك الخطأ بدون توقف البرنامج بسبب اللغة
-        st.error(f"خطأ فني: تم اكتشاف مشكلة في ترميز اللغة المحلية")
-        return False
-
+if "db" not in st.session_state:
+    st.session_state.db = load_db()
 
 # =============================================
 # إعدادات الصفحة
@@ -303,8 +275,7 @@ def save_adoption(info):
             "status":         "تم التواصل عبر الواتساب"
         }
         st.session_state.db["adoption"].append(req)
-        st.session_state.db = st.session_state.db
-
+        save_db()
         return True
     except Exception as e:
         st.error(f"خطأ: {e}")
@@ -316,7 +287,7 @@ def save_adoption(info):
 if "products" not in st.session_state:
     st.session_state.products = {
         "طعام_القطط_الجاف": [
-            {"id":1,"name":"رويال كانين - قطط بالغة 2 كجم","desc":"طعام متوازن للقطط البالغة من 1-7 سنوات","price":450,"cost":320,"icon":"🐱","stock":25,"unit":"كيس 2 كجم","brand":"Royal Canin","country":"فرنسا","features":["بروتين 32%","فيتامينات متكاملة","أوميجا 3 و 6"],"badges":["popular","premium"]},
+            {"id":1,"name":"رويال كانين - قطط بالغة 2 كجم","desc":"طعام متوازن للقطط البالغة من 1-7 سنوات","price":2000,"cost":320,"icon":"🐱","stock":25,"unit":"كيس 2 كجم","brand":"Royal Canin","country":"فرنسا","features":["بروتين 32%","فيتامينات متكاملة","أوميجا 3 و 6"],"badges":["popular","premium"]},
             {"id":2,"name":"رويال كانين كيتن - قطط صغيرة 1.5 كجم","desc":"تركيبة للقطط الصغيرة من شهرين إلى 12 شهر","price":400,"cost":280,"icon":"🐈","stock":18,"unit":"كيس 1.5 كجم","brand":"Royal Canin","country":"فرنسا","features":["سهل الهضم","دعم المناعة","تقوية العظام"],"badges":["new","recommended"]},
             {"id":3,"name":"بريميوم كات - قطط 1 كجم","desc":"طعام محلي عالي الجودة بسعر اقتصادي","price":70,"cost":45,"icon":"🐱","stock":40,"unit":"كيس 1 كجم","brand":"Premium Cat","country":"مصر","features":["جودة جيدة","سعر مناسب","بروتين 28%"],"badges":["sale"]},
         ],
@@ -804,31 +775,6 @@ if st.session_state.show_adoption_form:
         if can:
             st.session_state.show_adoption_form = False
             st.rerun()
-# =============================================
-# نموذج طلب سريع يرسل لجوجل شيت
-# =============================================
-st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-st.subheader("📝 سجل طلبك الآن (سيظهر في جوجل شيت)")
-
-with st.form("order_form"):
-    col1, col2 = st.columns(2)
-    with col1:
-        client_name = st.text_input("اسم العميل")
-        client_phone = st.text_input("رقم الهاتف")
-    with col2:
-        product_name = st.selectbox("نوع الخدمة/المنتج", ["كشف منزلي", "تطعيمات", "طعام قطط ميكس"])
-    
-    submit_order = st.form_submit_button("إرسال الطلب ✅")
-
-if submit_order:
-    if client_name and client_phone:
-        with st.spinner("جاري التسجيل في جوجل شيت..."):
-            # استدعاء الدالة التي عرفناها في أول الكود
-            if save_to_google_sheets(client_name, product_name, client_phone):
-                st.balloons()
-                st.markdown('<div class="success-message">تم تسجيل طلبك بنجاح في ملف جوجل شيت! 🐾</div>', unsafe_allow_html=True)
-    else:
-        st.warning("يرجى ملء الاسم ورقم الهاتف")
 
 # =============================================
 # الفوتر
