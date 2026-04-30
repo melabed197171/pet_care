@@ -692,10 +692,10 @@ st.markdown(
 )
 
 # =============================================
-# 5) (أسفل الصفحة) بحث وفرز
+# 5) ( بحث وفرز
 # =============================================
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">🔎 بحث وفرز (أسفل الصفحة)</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">🔎 بحث وفرز </div>', unsafe_allow_html=True)
 
 cat_options = ["الكل"] + list(st.session_state.products.keys())
 if st.session_state.cat_sel not in cat_options:
